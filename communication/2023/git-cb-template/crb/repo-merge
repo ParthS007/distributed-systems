@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+SCRIPTDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+if ! $SCRIPTDIR/repo-valid '.'; then
+    exit 1
+fi
+
+git fetch --all
+
+# Iterate over each remote (author)
+for remote in $(git remote); do
+    # For each branch from the specific author
+    for remote_branch in $(git branch -r | grep "$remote/" | sed "s/  $remote\///"); do
+        # The remote_branch will basically be the AUTHOR/NAME
+        AUTHOR=${remote_branch#*/}
+        
+        # Check if local branch exists
+        if ! git show-ref --verify --quiet refs/heads/$AUTHOR; then
+            # Local branch doesn't exist, so create it
+            git branch $AUTHOR $remote/$AUTHOR
+        else
+            # Check if the remote branch is ahead of the local branch
+            if [ $(git rev-list --count $AUTHOR..$remote/$AUTHOR) -ne 0 ]; then
+                # There are newer commits in the remote branch. Update local branch.
+                git checkout $AUTHOR
+                git merge $remote/$AUTHOR
+            fi
+        fi
+    done
+done

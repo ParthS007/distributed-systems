@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+SCRIPTDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+if ! $SCRIPTDIR/repo-valid '.'; then
+    exit 1
+fi
+
+# Get the list of all branches under refs/heads/* except the current process name
+HEADS_BRANCHES=$(git for-each-ref --format '%(refname:short)' refs/heads/* | grep -v "$(basename $0)")
+
+# Print messages newer in refs/heads/* than refs/delivered/* in causal order
+for branch in $HEADS_BRANCHES; do
+    process_name=$(basename $branch)
+    
+    # Check if a delivered reference exists for the process, if not then set it to an initial commit
+    if git show-ref -q "refs/delivered/$process_name"; then
+        DELIVERED_REF=$(git rev-parse "refs/delivered/$process_name")
+    else
+        DELIVERED_REF=$(git rev-list --max-parents=0 HEAD)
+    fi
+
+
+    # Get all commits that are in refs/heads/* but not in refs/delivered/*
+    NEW_COMMITS=$(git log --pretty=format:'%H %an: %s' "$DELIVERED_REF..$branch")
+
+    if [ -n "$NEW_COMMITS" ]; then
+        echo "$NEW_COMMITS" | awk '{print $1}'
+    fi
+done
+
+# Update refs/delivered/* to reference the same messages as refs/heads/*
+for branch in $HEADS_BRANCHES; do
+    process_name=$(basename $branch)
+    git update-ref "refs/delivered/$process_name" "$(git rev-parse "$branch")"
+done

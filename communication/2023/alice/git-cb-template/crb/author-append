@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+SCRIPTDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+AUTHOR=$1
+MSG=$2
+
+if ! $SCRIPTDIR/repo-valid '.'; then
+    exit 1
+fi
+
+if [ -z "$AUTHOR" ]; then
+    echo "Empty author '$AUTHOR'" >&2
+    exit 1
+fi
+
+if [ -z "$MSG" ]; then
+    echo "Empty message '$MSG'" >&2
+    exit 1
+fi
+
+if ! git show-ref $AUTHOR 1>/dev/null 2>/dev/null; then
+    echo "Branch for author '$AUTHOR' does not exist" >&2
+    exit 1
+fi
+
+# Get the latest commits from all authors in local branches
+for branch in $(git for-each-ref --format '%(refname:short)' refs/heads/); do
+    BRANCH_AUTHOR=$(git log -1 --pretty=format:'%an' $branch)
+
+    if [ "$BRANCH_AUTHOR" != "$AUTHOR" ]; then
+        PARENTS+=($(git rev-parse $branch))
+    fi
+done
+
+# Generate a list of parent flags for git commit-tree
+PARENT_FLAGS=""
+for parent in "${PARENTS[@]}"; do
+    PARENT_FLAGS="$PARENT_FLAGS -p $parent"
+done
+
+# Create a new tree
+TREE=$(git write-tree)
+
+# Create the commit
+COMMIT=$(echo "$MSG" | git commit-tree $TREE $PARENT_FLAGS)
+
+# Update the branch to point to the new commit
+git branch -f $AUTHOR $COMMIT

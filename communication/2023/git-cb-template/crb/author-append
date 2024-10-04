@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+SCRIPTDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+AUTHOR=$1
+MSG=$2
+
+if ! $SCRIPTDIR/repo-valid '.'; then
+    exit 1
+fi
+
+if [ -z "$AUTHOR" ]; then
+    echo "Empty author '$AUTHOR'" >&2
+    exit 1
+fi
+
+if [ -z "$MSG" ]; then
+    echo "Empty message '$MSG'" >&2
+    exit 1
+fi
+
+if ! git show-ref $AUTHOR 1>/dev/null 2>/dev/null; then
+    echo "Branch for author '$AUTHOR' does not exist" >&2
+    exit 1
+fi
+
+# Get the latest commit SHAs of all other authors
+PARENTS=$(git for-each-ref refs/heads --format '%(authoremail) %(objectname)' | 
+          grep -v "$AUTHOR" | 
+          awk '{print $2}' | 
+          tr '\n' ' ')
+
+# Check if PARENTS is empty (no other authors found)
+if [ -z "$PARENTS" ]; then
+    echo "No other authors found in local branches."
+    exit 1
+fi
+
+# Create a tree for the new commit. This will reuse the current HEAD's tree, meaning no new changes are introduced in the commit
+TREE=$(git write-tree)
+
+NEW_COMMIT=$(GIT_COMMITTER_NAME="$AUTHOR" GIT_AUTHOR_NAME="$AUTHOR" GIT_COMMITTER_EMAIL="" GIT_AUTHOR_EMAIL="" git commit-tree $TREE $(printf -- "-p %s " $PARENTS) -m "$MSG")
+
+# Update the branch to the new commit
+git update-ref "refs/heads/$AUTHOR" $NEW_COMMIT
+
+echo "New commit created and refs/heads/$AUTHOR updated!"
