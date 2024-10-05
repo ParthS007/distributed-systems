@@ -5,7 +5,7 @@
 #### Prerequisites
 
 - Python 3.x installed on the system.
-- Basic understanding of Git DAGs and vector clocks.
+- Install library for plotting graphs using `pip` => `pip install networkx matplotlib`
 
 #### Files
 - vector_clock.py : The main script file.
@@ -13,7 +13,10 @@
 - `causal_graph.json`: Output file containing the causal graph with all causal relationships.
 - `minimal_causal_graph.json`: Output file containing the minimal causal graph with transitive edges removed.
 
-#### Steps to Run the Script
+#### Running Instructions
+
+We can run the script, generate the output files and plots, and understand the causal relationships between commits in a Git DAG.
+
 
 1. Ensure the `vector_clock.py` script in the working directory.
 
@@ -37,33 +40,11 @@
    }
    ```
 
-   Example:
-   ```json
-   {
-       "1111": [1, 0, 0],
-       "12f3": [2, 0, 0],
-       "f432": [3, 1, 0],
-       "2101": [1, 1, 0],
-       "9634": [1, 1, 1],
-       "e13b": [3, 1, 2]
-   }
-   ```
-
 2. Causal Graph (causal_graph.json)
 
    ```json
    {
        "commit_hash": ["list_of_commits_it_causally_precedes"]
-   }
-   ```
-   Example:
-   ```json
-   {
-       "1111": ["12f3", "2101"],
-       "12f3": ["f432"],
-       "2101": ["f432", "9634"],
-       "9634": ["e13b"],
-       "f432": ["e13b"]
    }
    ```
 
@@ -74,15 +55,5 @@
        "commit_hash": ["list_of_commits_it_directly_causally_precedes"]
    }
    ```
-   Example:
-   ```json
-   {
-       "1111": ["12f3", "2101"],
-       "12f3": ["f432"],
-       "2101": ["9634"],
-       "9634": ["e13b"],
-       "f432": ["e13b"]
-   }
-   ```
 
-By following these steps, we can run the script, generate the necessary output files, and understand the causal relationships between commits in a Git DAG.
+4. Visualize the Graphs: The script will automatically display the causal graph and the minimal causal graph using matplotlib. The graphs will be shown in separate file with titles "Causal Graph" and "Minimal Causal Graph".

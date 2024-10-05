@@ -1,4 +1,6 @@
 import json
+import networkx as nx
+import matplotlib.pyplot as plt
 
 # Input JSON representing the Git DAG
 dag = {
@@ -14,6 +16,12 @@ def calculate_vector_clocks(dag):
     branches = list(dag.keys())
     branch_indices = {branch: i for i, branch in enumerate(branches)}
 
+    # Create a reverse mapping to find which branch a commit belongs to
+    commit_to_branch = {}
+    for branch, commits in dag.items():
+        for commit in commits:
+            commit_to_branch[commit] = branch
+
     # update vector clocks
     def update_vector_clock(commit, branch):
         if commit not in vector_clocks:
@@ -24,16 +32,22 @@ def calculate_vector_clocks(dag):
     for branch, commits in dag.items():
         for commit, parents in commits.items():
             if not parents:
+                # If there are no parents, initialize the clock for this commit
                 update_vector_clock(commit, branch)
             else:
                 max_clocks = [0] * len(branches)
                 for parent in parents:
-                    if parent in vector_clocks:
-                        max_clocks = [
-                            max(max_clocks[i], vector_clocks[parent][i])
-                            for i in range(len(branches))
-                        ]
-                vector_clocks[commit] = [max_clocks[i] for i in range(len(branches))]
+                    if parent not in vector_clocks:
+                        # Ensure parent is processed before the current commit
+                        parent_branch = commit_to_branch[parent]
+                        update_vector_clock(parent, parent_branch)
+                    # Now updating max_clocks with the parent's clock
+                    max_clocks = [
+                        max(max_clocks[i], vector_clocks[parent][i])
+                        for i in range(len(branches))
+                    ]
+                # Set the vector clock for the current commit based on max_clocks
+                vector_clocks[commit] = max_clocks
                 vector_clocks[commit][branch_indices[branch]] += 1
 
     return vector_clocks
@@ -72,6 +86,29 @@ def remove_transitive_edges(graph):
     return {node: list(edges) for node, edges in minimal_graph.items()}
 
 
+def visualize_graph(graph, title):
+    G = nx.DiGraph()
+    for node, edges in graph.items():
+        for edge in edges:
+            G.add_edge(edge, node)
+
+    pos = nx.spring_layout(G)
+    plt.figure(figsize=(12, 8))
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        node_size=3000,
+        node_color="skyblue",
+        font_size=10,
+        font_weight="bold",
+        arrows=True,
+    )
+    plt.title(title)
+    plt.savefig(f"{title}.png")
+    plt.show(block=False)
+
+
 # Calculate vector clocks
 vector_clocks = calculate_vector_clocks(dag)
 
@@ -101,3 +138,7 @@ with open(minimal_causal_graph_file, "w") as f:
     json.dump(minimal_causal_graph, f, indent=4)
 
 print(f"Minimal causal graph has been written to {minimal_causal_graph_file}")
+
+# Visualize the graphs
+visualize_graph(causal_graph, "Causal Graph")
+visualize_graph(minimal_causal_graph, "Minimal Causal Graph")
