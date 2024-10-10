@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import data_pb2 as data__pb2
+from hash_server import data_pb2 as hash__server_dot_data__pb2
 
 GRPC_GENERATED_VERSION = '1.66.2'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in data_pb2_grpc.py depends on'
+        + f' but the generated code in hash_server/data_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -36,28 +36,28 @@ class DBStub(object):
         """
         self.RegisterUser = channel.unary_unary(
                 '/DATA.DB/RegisterUser',
-                request_serializer=data__pb2.UserPass.SerializeToString,
-                response_deserializer=data__pb2.Result.FromString,
+                request_serializer=hash__server_dot_data__pb2.UserPass.SerializeToString,
+                response_deserializer=hash__server_dot_data__pb2.Result.FromString,
                 _registered_method=True)
         self.StoreData = channel.unary_unary(
                 '/DATA.DB/StoreData',
-                request_serializer=data__pb2.StoreReq.SerializeToString,
-                response_deserializer=data__pb2.Result.FromString,
+                request_serializer=hash__server_dot_data__pb2.StoreReq.SerializeToString,
+                response_deserializer=hash__server_dot_data__pb2.Result.FromString,
                 _registered_method=True)
         self.GenPasscode = channel.unary_unary(
                 '/DATA.DB/GenPasscode',
-                request_serializer=data__pb2.UserPass.SerializeToString,
-                response_deserializer=data__pb2.Passcode.FromString,
+                request_serializer=hash__server_dot_data__pb2.UserPass.SerializeToString,
+                response_deserializer=hash__server_dot_data__pb2.Passcode.FromString,
                 _registered_method=True)
         self.GetData = channel.unary_unary(
                 '/DATA.DB/GetData',
-                request_serializer=data__pb2.UserPass.SerializeToString,
-                response_deserializer=data__pb2.Data.FromString,
+                request_serializer=hash__server_dot_data__pb2.UserPass.SerializeToString,
+                response_deserializer=hash__server_dot_data__pb2.Data.FromString,
                 _registered_method=True)
         self.GetAuthData = channel.unary_unary(
                 '/DATA.DB/GetAuthData',
-                request_serializer=data__pb2.Passcode.SerializeToString,
-                response_deserializer=data__pb2.Data.FromString,
+                request_serializer=hash__server_dot_data__pb2.Passcode.SerializeToString,
+                response_deserializer=hash__server_dot_data__pb2.Data.FromString,
                 _registered_method=True)
 
 
@@ -99,28 +99,28 @@ def add_DBServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'RegisterUser': grpc.unary_unary_rpc_method_handler(
                     servicer.RegisterUser,
-                    request_deserializer=data__pb2.UserPass.FromString,
-                    response_serializer=data__pb2.Result.SerializeToString,
+                    request_deserializer=hash__server_dot_data__pb2.UserPass.FromString,
+                    response_serializer=hash__server_dot_data__pb2.Result.SerializeToString,
             ),
             'StoreData': grpc.unary_unary_rpc_method_handler(
                     servicer.StoreData,
-                    request_deserializer=data__pb2.StoreReq.FromString,
-                    response_serializer=data__pb2.Result.SerializeToString,
+                    request_deserializer=hash__server_dot_data__pb2.StoreReq.FromString,
+                    response_serializer=hash__server_dot_data__pb2.Result.SerializeToString,
             ),
             'GenPasscode': grpc.unary_unary_rpc_method_handler(
                     servicer.GenPasscode,
-                    request_deserializer=data__pb2.UserPass.FromString,
-                    response_serializer=data__pb2.Passcode.SerializeToString,
+                    request_deserializer=hash__server_dot_data__pb2.UserPass.FromString,
+                    response_serializer=hash__server_dot_data__pb2.Passcode.SerializeToString,
             ),
             'GetData': grpc.unary_unary_rpc_method_handler(
                     servicer.GetData,
-                    request_deserializer=data__pb2.UserPass.FromString,
-                    response_serializer=data__pb2.Data.SerializeToString,
+                    request_deserializer=hash__server_dot_data__pb2.UserPass.FromString,
+                    response_serializer=hash__server_dot_data__pb2.Data.SerializeToString,
             ),
             'GetAuthData': grpc.unary_unary_rpc_method_handler(
                     servicer.GetAuthData,
-                    request_deserializer=data__pb2.Passcode.FromString,
-                    response_serializer=data__pb2.Data.SerializeToString,
+                    request_deserializer=hash__server_dot_data__pb2.Passcode.FromString,
+                    response_serializer=hash__server_dot_data__pb2.Data.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -148,8 +148,8 @@ class DB(object):
             request,
             target,
             '/DATA.DB/RegisterUser',
-            data__pb2.UserPass.SerializeToString,
-            data__pb2.Result.FromString,
+            hash__server_dot_data__pb2.UserPass.SerializeToString,
+            hash__server_dot_data__pb2.Result.FromString,
             options,
             channel_credentials,
             insecure,
@@ -175,8 +175,8 @@ class DB(object):
             request,
             target,
             '/DATA.DB/StoreData',
-            data__pb2.StoreReq.SerializeToString,
-            data__pb2.Result.FromString,
+            hash__server_dot_data__pb2.StoreReq.SerializeToString,
+            hash__server_dot_data__pb2.Result.FromString,
             options,
             channel_credentials,
             insecure,
@@ -202,8 +202,8 @@ class DB(object):
             request,
             target,
             '/DATA.DB/GenPasscode',
-            data__pb2.UserPass.SerializeToString,
-            data__pb2.Passcode.FromString,
+            hash__server_dot_data__pb2.UserPass.SerializeToString,
+            hash__server_dot_data__pb2.Passcode.FromString,
             options,
             channel_credentials,
             insecure,
@@ -229,8 +229,8 @@ class DB(object):
             request,
             target,
             '/DATA.DB/GetData',
-            data__pb2.UserPass.SerializeToString,
-            data__pb2.Data.FromString,
+            hash__server_dot_data__pb2.UserPass.SerializeToString,
+            hash__server_dot_data__pb2.Data.FromString,
             options,
             channel_credentials,
             insecure,
@@ -256,8 +256,8 @@ class DB(object):
             request,
             target,
             '/DATA.DB/GetAuthData',
-            data__pb2.Passcode.SerializeToString,
-            data__pb2.Data.FromString,
+            hash__server_dot_data__pb2.Passcode.SerializeToString,
+            hash__server_dot_data__pb2.Data.FromString,
             options,
             channel_credentials,
             insecure,

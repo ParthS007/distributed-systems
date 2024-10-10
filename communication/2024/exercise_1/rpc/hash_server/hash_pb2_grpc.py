@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import hash_pb2 as hash__pb2
+from hash_server import hash_pb2 as hash__server_dot_hash__pb2
 
 GRPC_GENERATED_VERSION = '1.66.2'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in hash_pb2_grpc.py depends on'
+        + f' but the generated code in hash_server/hash_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -36,8 +36,8 @@ class HSStub(object):
         """
         self.GetHash = channel.unary_unary(
                 '/Hash.HS/GetHash',
-                request_serializer=hash__pb2.Request.SerializeToString,
-                response_deserializer=hash__pb2.Response.FromString,
+                request_serializer=hash__server_dot_hash__pb2.Request.SerializeToString,
+                response_deserializer=hash__server_dot_hash__pb2.Response.FromString,
                 _registered_method=True)
 
 
@@ -55,8 +55,8 @@ def add_HSServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'GetHash': grpc.unary_unary_rpc_method_handler(
                     servicer.GetHash,
-                    request_deserializer=hash__pb2.Request.FromString,
-                    response_serializer=hash__pb2.Response.SerializeToString,
+                    request_deserializer=hash__server_dot_hash__pb2.Request.FromString,
+                    response_serializer=hash__server_dot_hash__pb2.Response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -84,8 +84,8 @@ class HS(object):
             request,
             target,
             '/Hash.HS/GetHash',
-            hash__pb2.Request.SerializeToString,
-            hash__pb2.Response.FromString,
+            hash__server_dot_hash__pb2.Request.SerializeToString,
+            hash__server_dot_hash__pb2.Response.FromString,
             options,
             channel_credentials,
             insecure,

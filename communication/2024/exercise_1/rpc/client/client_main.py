@@ -1,6 +1,6 @@
 import grpc
 
-from pyServerr import data_pb2, data_pb2_grpc, hash_pb2, hash_pb2_grpc
+from hash_server import hash_pb2_grpc, hash_pb2, data_pb2_grpc, data_pb2
 
 
 def run():
