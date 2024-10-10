@@ -11,14 +11,14 @@ def run():
     # Register a new user
     username = "arber.hyseni"
     password = "test-unibas"
-    register_response = stub.RegisterUser(data_pb2.RegisterUser(username=username, password=password))
+    register_response = stub.RegisterUser(data_pb2.UserPass(username=username, password=password))
     if register_response.success:
         print("User registered successfully")
     elif not register_response.success:
         print("Erorr while registering user")
 
     data = "Hello from Planet Mars"
-    store_response = stub.StoreData(data_pb2.StoreData(username=username, password=password, msg=data))
+    store_response = stub.StoreData(data_pb2.StoreReq(username=username, password=password, msg=data))
     if store_response.success:
         print("Data stored successfully")
     elif not store_response.success:
@@ -26,13 +26,13 @@ def run():
 
     # Generate passcode
     passcode_response = stub.GenPasscode(data_pb2.UserPass(username=username, password=password))
-    passcode = passcode_response.password
+    passcode = passcode_response.code
 
     # connect to hash server
     hash_server = grpc.insecure_channel('localhost:50052')
     hash_stub = hash_pb2_grpc.HSStub(hash_server)
 
-    hash_response = hash_stub.GetHash(hash_pb2.Request(passcode=passcode, ip='localhost', port='50052'))
+    hash_response = hash_stub.GetHash(hash_pb2.Request(passcode=passcode, ip='46.249.101.244:50051', port=50051))
     generated_hash = hash_response.hash
     print(generated_hash)
 

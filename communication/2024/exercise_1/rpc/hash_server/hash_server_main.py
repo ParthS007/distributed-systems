@@ -7,18 +7,9 @@ from hash_server import hash_pb2_grpc, hash_pb2, data_pb2_grpc
 
 class HashService(hash_pb2_grpc.HSServicer):
     def GetHash(self, request, context):
-        # Connect to the Data Server using gRPC
-        data_channel = grpc.insecure_channel(f'{request.ip}:{request.port}')
-        data_stub = data_pb2_grpc.DBStub(data_channel)
-
-        # Retrieve the data using the GetAuthData service
         try:
-            data_response = data_stub.GetAuthData(f'{request.passcode}')
-            print('DATA_RESPONSE_PRINT', data_response)
-            user_data = data_response.msg
-
-            # Compute the hash of the retrieved data
-            data_hash = hashlib.sha256(user_data.encode()).hexdigest()
+            # Generate the hash value of the passcode
+            data_hash = hashlib.sha256(request.passcode.encode()).hexdigest()
             return hash_pb2.Response(hash=data_hash)
 
         except grpc.RpcError as e:
@@ -28,6 +19,7 @@ class HashService(hash_pb2_grpc.HSServicer):
 
 
 def serve():
+    # initiate the server where the rpc's can be serviced
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     hash_pb2_grpc.add_HSServicer_to_server(HashService(), server)
     server.add_insecure_port('[::]:50052')
