@@ -24,6 +24,9 @@ This guide provides instructions on how to generate gRPC code from `.proto` file
     - `cd hash_server`
     - `python3 -m grpc_tools.protoc -I. --python_out=./ --grpc_python_out=./ hash.proto`
     - `python3 -m grpc_tools.protoc -I. --python_out=./ --grpc_python_out=./ data.proto`
+    - on the `*_grpc` generated files add at the beginning of line `from hash_server` on the import line
+        - `import hash_pb2 as hash__pb2` => `from hash_server import hash_pb2 as hash__pb2`
+        - `import data_pb2 as data__pb2` => `from hash_server import data_pb2 as data__pb2`
     - `cd ..`
 
 2. Run the server:
@@ -36,7 +39,6 @@ This guide provides instructions on how to generate gRPC code from `.proto` file
 1. Run the client:
 - `cd ..`
 - `cd client`
-- on the *_grpc generated files add at the beginning of line `from hash_server` on the import line
 - `python3 client_main.py --username <username-here> --password <password-here>`
 
 Output:
