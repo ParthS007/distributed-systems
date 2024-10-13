@@ -34,7 +34,7 @@ def run():
 
     hash_response = hash_stub.GetHash(hash_pb2.Request(passcode=passcode, ip='46.249.101.244:50051', port=50051))
     generated_hash = hash_response.hash
-    print(generated_hash)
+    print('Output from hash_server:', generated_hash)
 
 
 if __name__ == "__main__":
