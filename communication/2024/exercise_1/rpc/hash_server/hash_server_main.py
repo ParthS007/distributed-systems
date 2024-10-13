@@ -2,7 +2,7 @@ import grpc
 from concurrent import futures
 import hashlib
 
-from hash_server import hash_pb2_grpc, hash_pb2, data_pb2_grpc
+import hash_pb2_grpc, hash_pb2, data_pb2_grpc
 
 
 class HashService(hash_pb2_grpc.HSServicer):
