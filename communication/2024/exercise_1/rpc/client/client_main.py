@@ -1,16 +1,15 @@
 import grpc
+import argparse
 
 from hash_server import hash_pb2_grpc, hash_pb2, data_pb2_grpc, data_pb2
 
 
-def run():
+def run(username, password):
     # Connect to the Data Server
     channel = grpc.insecure_channel('46.249.101.244:50051')
     stub = data_pb2_grpc.DBStub(channel)
 
     # Register a new user
-    username = "arber.hyseni"
-    password = "test-unibas"
     register_response = stub.RegisterUser(data_pb2.UserPass(username=username, password=password))
     if register_response.success:
         print("User registered successfully")
@@ -38,4 +37,9 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(description='Client for registering user, storing data, and retrieving hash.')
+    parser.add_argument('--username', type=str, required=True, help='Username for registration')
+    parser.add_argument('--password', type=str, required=True, help='Password for registration')
+
+    args = parser.parse_args()
+    run(args.username, args.password)
