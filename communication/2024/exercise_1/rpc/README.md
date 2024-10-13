@@ -6,7 +6,7 @@ This guide provides instructions on how to generate gRPC code from `.proto` file
 #### Prerequisites
 
 - Python 3.x installed on the system.
-- `python -m venv venv`
+- `python3 -m venv venv`
 - `source venv/bin/activate`
 - Install gRPC dependencies using:
 - `pip` => `pip install grpcio grpcio-tools`
@@ -22,13 +22,22 @@ This guide provides instructions on how to generate gRPC code from `.proto` file
 
 1. First we will gRPC code from `.proto` file.
     - `cd hash_server`
-    - `python -m grpc_tools.protoc -I. --python_out=./ --grpc_python_out=./ hash.proto`
-    - `python -m grpc_tools.protoc -I. --python_out=./ --grpc_python_out=./ data.proto`
+    - `python3 -m grpc_tools.protoc -I. --python_out=./ --grpc_python_out=./ hash.proto`
+    - `python3 -m grpc_tools.protoc -I. --python_out=./ --grpc_python_out=./ data.proto`
     - `cd ..`
 
-2. Run the server - `python -m hash_server.hash_server_main`
+2. Run the server:
+- `cd hash_server`
+- `python3 hash_server_main.py`
 
 #### Client Running Instructions
 **_Very Important_: Ensure that you are in `rpc` folder.**
 
-1. Run the client - `python -m client.client_main --username <username-here> --password <password-here>`
+1. Run the client:
+- `cd ..`
+- `cd client`
+- on the _grpc generated files add `from hash_server` on the import line
+- `python3 client_main.py --username <username-here> --password <password-here>`
+
+Output:
+![client output](client-rpc-output.png "Client output")
