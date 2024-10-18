@@ -1,36 +1,49 @@
-# Description: CRDT implementation for shopping cart
+"""
+CRDT implementation for shopping cart using the Causal Length Set (CLS) approach.
+
+CLS approach: Elements can be added and removed arbitrarily often without coordination,
+yet all parties eventually agree on the final state.
+
+The algorithm is implemented in the class CLS. The class has the following methods:
+- add(element): Add an element to the list
+- remove(element): Remove an element from the list
+- contains(element): Check if the element is in the list
+- mutual_sync(other_lists): Synchronize the list with other lists
+- get_elements(): Get the elements in the list
+"""
 
 
 class CLS:
     def __init__(self):
-        self.add_set = set()
-        self.remove_set = set()
+        self.A = {}
 
     def add(self, element):
-        self.add_set.add(element)
+        # If element is not in the list, add it with a count of 1
+        if element not in self.A:
+            self.A[element] = 1
+        # If element is in the list and its count is even, increment the count
+        elif self.A[element] % 2 == 0:
+            self.A[element] += 1
 
     def remove(self, element):
-        self.remove_set.add(element)
-
-    def mutual_sync(self, other_lists):
-        for other in other_lists:
-            # Synchronizing both add_set and remove_set
-            self.add_set.update(other.add_set)
-            self.remove_set.update(other.remove_set)
-            other.add_set.update(self.add_set)
-            other.remove_set.update(self.remove_set)
-
-        # After all sets are synchronized, we apply difference_update to ensure
-        # elements present in remove_set are removed from add_set
-        self.add_set.difference_update(self.remove_set)
-        for other in other_lists:
-            other.add_set.difference_update(other.remove_set)
+        # If element is in the list and it is odd, increment it
+        if element in self.A and self.A[element] % 2 == 1:
+            self.A[element] += 1
 
     def contains(self, element):
-        return element in self.add_set
+        # If element is in the list and it is odd, return True
+        return element in self.A and self.A[element] % 2 == 1
+
+    def mutual_sync(self, other_lists):
+        # Synchronize the list with other lists by taking the maximum count of each element
+        for other in other_lists:
+            for element in set(self.A.keys()).union(other.A.keys()):
+                self.A[element] = max(self.A.get(element, 0), other.A.get(element, 0))
+                other.A[element] = self.A[element]
 
     def get_elements(self):
-        return self.add_set
+        return {e for e in self.A if self.contains(e)}
+
 
 # Simulated shared shopping cart
 alice_list = CLS()
