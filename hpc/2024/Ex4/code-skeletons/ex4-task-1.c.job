@@ -16,7 +16,7 @@ ml intel
 export OMP_NUM_THREADS=10
 
 # Compile the code
-mpiicc -O3 -fopenmp gemm.c -o gemm
+mpiicc -O3 -fopenmp gemm.c -o gemm-c
 
 # Run the program with matrix size 4000 - Task 1 C
-srun ./gemm 4000
+srun ./gemm-c 4000
