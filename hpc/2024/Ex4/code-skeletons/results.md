@@ -12,7 +12,7 @@ Total Threads: 20
 Rows per Rank: 2000
 Rows per Thread: 200
 
-Execution Time: 9.757886 seconds
+Execution Time: 8.042278 seconds
 ```
 
 ## Test 2: 4 Ranks Configuration
@@ -27,7 +27,7 @@ Total Threads: 40
 Rows per Rank: 1000
 Rows per Thread: 100
 
-Execution Time: 4.974529 seconds
+Execution Time: 4.057506 seconds
 ```
 ## Result Analysis
 
@@ -38,3 +38,17 @@ Execution Time: 4.974529 seconds
 
 # Task 2: MPI + OpenMP Mandelbrot
 
+## Test Configuration
+```bash
+# Configuration
+Ranks: 4
+Threads per Rank: 10
+Total Threads: 40
+
+# Workload Distribution
+Total Pixels: 1,048,576 pixels
+Pixels per MPI rank: ~262,144 pixels
+Processing rate: ~330,587 pixels/second
+
+Execution Time: 3.171854 seconds
+```
