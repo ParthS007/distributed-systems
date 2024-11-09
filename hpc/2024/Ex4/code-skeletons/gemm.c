@@ -20,7 +20,7 @@ void gemm(double *A, double *B, double *C, int n, int rows_per_rank, int rank) {
     int row_counter;  // Counter for rows processed in OpenMP threads
     
     //TODO: parallelize the region and the loop using OpenMP
-    #pragma omp parallel for private(row_counter)
+    #pragma omp parallel private(row_counter)
     {
         row_counter = 0;
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        err = MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, final_C, rows_per_rank * N, 0, MPI_COMM_WORLD);
+        err = MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, final_C, rows_per_rank * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         if (err != MPI_SUCCESS) {
             fprintf(stderr, "Rank 0: MPI_Gather failed\n");
             free(final_C);
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
         free(final_C);
     } else {
         //TODO: Send the result of the multiplication from each rank to rank 0. HINT, "Send" DOES NOT mean MPI_Send!
-        MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, NULL, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        err = MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, NULL, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         if (err != MPI_SUCCESS) {
             fprintf(stderr, "Rank %d: MPI_Gather failed\n", rank);
             MPI_Abort(MPI_COMM_WORLD, 1);
