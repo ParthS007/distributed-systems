@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
         free(final_C);
     } else {
         //TODO: Send the result of the multiplication from each rank to rank 0. HINT, "Send" DOES NOT mean MPI_Send!
-        err = MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, NULL, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, NULL, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
     // End timer and print execution time on rank 0
