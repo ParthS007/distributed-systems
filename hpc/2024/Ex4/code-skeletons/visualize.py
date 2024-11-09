@@ -1,4 +1,4 @@
-from numpy import complex, array
+from numpy import array
 import numpy as np
 import matplotlib.pyplot as plt
 import colorsys
