@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH -J GEMM_TEST_D        # Job name
-#SBATCH --time=00:05:00       # Maximum running time
+#SBATCH -J Mandelbrot         # Job name
+#SBATCH --time=00:10:00       # Maximum running time
 #SBATCH --exclusive           # Exclusive access to nodes
 #SBATCH --nodes=2             # Need 2 nodes for 4 ranks (2 ranks per node)
 #SBATCH --ntasks-per-node=2   # 2 MPI ranks per node (total 4 ranks)
 #SBATCH --cpus-per-task=10    # 10 OpenMP threads per rank
 #SBATCH --partition=xeon      # Using xeon partition
-#SBATCH --output=GEMM_OUTPUT_D.txt  # Output file
+#SBATCH --output=mandel_output.txt  # Output file
 #SBATCH --hint=nomultithread  # Disable hardware multithreading
 
 # Load Intel compiler
@@ -16,7 +16,7 @@ ml intel
 export OMP_NUM_THREADS=10
 
 # Compile the code
-mpiicc -O3 -fopenmp gemm.c -o gemm-d
+mpiicc -O3 -fopenmp mandel_seq.c -o mandel_seq.o
 
-# Run the program with matrix size 4000
-srun ./gemm-d 4000
+# Run the program
+srun ./mandel_seq.o 10000 1024 0 0 0.75
