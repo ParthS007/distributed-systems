@@ -30,7 +30,6 @@ void gemm(double *A, double *B, double *C, int n, int rows_per_rank, int rank) {
             row_counter++;
             for (int j = 0; j < n; j++) {
                 double sum = 0.0;
-                #pragma omp simd reduction(+:sum)
                 for (int k = 0; k < n; k++) {
                     sum += A[i * n + k] * B[k * n + j];
                 }
@@ -66,9 +65,6 @@ int main(int argc, char *argv[]) {
 
     //TODO: Calculate how many rows each rank will process
     int rows_per_rank = N / size;
-    if (N % size != 0 && rank == 0) {
-        printf("Warning: Matrix size %d not evenly divisible by number of processes %d\n", N, size);
-    }
 
     //TODO: Allocate memory for the matrices. 
     //Remember, matrix A is local to each rank, while matrix B is only on rank 0. 
@@ -76,26 +72,8 @@ int main(int argc, char *argv[]) {
     //Later, matrix B will be broadcasted to all ranks such that each rank has a copy of it and can use it to mutiply by their portion of A.
     //In summary, each rank will have a piece of A and the whole B, and will compute a piece of C.
     double *A = (double *)malloc(rows_per_rank * N * sizeof(double));
-    if (A == NULL) {
-        fprintf(stderr, "Rank %d: Failed to allocate matrix A\n", rank);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-        return 1;
-    }
     double *B = (double *)malloc(N * N * sizeof(double));
-    if (B == NULL) {
-        fprintf(stderr, "Rank %d: Failed to allocate matrix B\n", rank);
-        free(A);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-        return 1;
-    }
     double *C = (double *)malloc(rows_per_rank * N * sizeof(double));
-    if (C == NULL) {
-        fprintf(stderr, "Rank %d: Failed to allocate matrix C\n", rank);
-        free(A);
-        free(B);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-        return 1;
-    }
 
     // Initialize the seed we will use to generate the matrices. We use a fixed seed for repeatability.
     srand48(SEED);
@@ -114,13 +92,7 @@ int main(int argc, char *argv[]) {
     double start_time = MPI_Wtime();
 
     //TODO: Broadcast matrix B to all ranks
-    int err = MPI_Bcast(B, N * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    if (err != MPI_SUCCESS) {
-        fprintf(stderr, "Rank %d: MPI_Bcast failed\n", rank);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-        return 1;
-    }
-
+    MPI_Bcast(B, N * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Perform GEMM
     gemm(A, B, C, N, rows_per_rank, rank);
@@ -129,28 +101,11 @@ int main(int argc, char *argv[]) {
     if (rank == 0) {
         //TODO: Allocate the memory for the final matrix C that will hold the result of the multiplication from all ranks.
         double *final_C = (double *)malloc(N * N * sizeof(double));
-        if (final_C == NULL) {
-            fprintf(stderr, "Rank 0: Failed to allocate final_C\n");
-            MPI_Abort(MPI_COMM_WORLD, 1);
-            return 1;
-        }
-
-        err = MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, final_C, rows_per_rank * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        if (err != MPI_SUCCESS) {
-            fprintf(stderr, "Rank 0: MPI_Gather failed\n");
-            free(final_C);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-            return 1;
-        }
+        MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, final_C, rows_per_rank * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         free(final_C);
     } else {
         //TODO: Send the result of the multiplication from each rank to rank 0. HINT, "Send" DOES NOT mean MPI_Send!
         err = MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, NULL, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        if (err != MPI_SUCCESS) {
-            fprintf(stderr, "Rank %d: MPI_Gather failed\n", rank);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-            return 1;
-        }
     }
 
     // End timer and print execution time on rank 0
