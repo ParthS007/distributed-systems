@@ -7,6 +7,7 @@
 
 // Function to initialize matrices with a fixed seed for repeatability
 void init_matrix(double *matrix, int rows, int cols) {
+    #pragma omp parallel for
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             matrix[i * cols + j] = drand48();  // Random values for demonstration
@@ -19,10 +20,17 @@ void gemm(double *A, double *B, double *C, int n, int rows_per_rank, int rank) {
     int row_counter;  // Counter for rows processed in OpenMP threads
     
     //TODO: parallelize the region and the loop using OpenMP
+    #pragma omp parallel for private(row_counter)
+    {
+        row_counter = 0;
+
+        #pragma omp for
         for (int i = 0; i < rows_per_rank; i++) {
             //TODO: Increment the row counter such that we can print the number of rows processed by each thread
+            row_counter++;
             for (int j = 0; j < n; j++) {
                 double sum = 0.0;
+                #pragma omp simd reduction(+:sum)
                 for (int k = 0; k < n; k++) {
                     sum += A[i * n + k] * B[k * n + j];
                 }
@@ -31,13 +39,20 @@ void gemm(double *A, double *B, double *C, int n, int rows_per_rank, int rank) {
         }
 
         //TODO: Print the number of rows processed by each thread. Remember, this might need to be inside the OpenMP parallel region
-        printf("Thread %d of rank %d processed %d rows\n", omp_get_thread_num(), rank, row_counter);
+        # pragma omp critical
+        {
+            printf("Thread %d of rank %d processed %d rows\n", omp_get_thread_num(), rank, row_counter);
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
     int rank, size;
     
-    //TODO: Initialize MPI 
+    //TODO: Initialize MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     // Read matrix size from command line argument
     if (argc != 2) {
@@ -50,13 +65,37 @@ int main(int argc, char *argv[]) {
     int N = atoi(argv[1]);  // Matrix size you provided and an argument
 
     //TODO: Calculate how many rows each rank will process
+    int rows_per_rank = N / size;
+    if (N % size != 0 && rank == 0) {
+        printf("Warning: Matrix size %d not evenly divisible by number of processes %d\n", N, size);
+    }
 
     //TODO: Allocate memory for the matrices. 
     //Remember, matrix A is local to each rank, while matrix B is only on rank 0. 
     //Thus, the memory allocation for A will be different (smaller) from B.
     //Later, matrix B will be broadcasted to all ranks such that each rank has a copy of it and can use it to mutiply by their portion of A.
     //In summary, each rank will have a piece of A and the whole B, and will compute a piece of C.
-    
+    double *A = (double *)malloc(rows_per_rank * N * sizeof(double));
+    if (A == NULL) {
+        fprintf(stderr, "Rank %d: Failed to allocate matrix A\n", rank);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
+    double *B = (double *)malloc(N * N * sizeof(double));
+    if (B == NULL) {
+        fprintf(stderr, "Rank %d: Failed to allocate matrix B\n", rank);
+        free(A);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
+    double *C = (double *)malloc(rows_per_rank * N * sizeof(double));
+    if (C == NULL) {
+        fprintf(stderr, "Rank %d: Failed to allocate matrix C\n", rank);
+        free(A);
+        free(B);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
 
     // Initialize the seed we will use to generate the matrices. We use a fixed seed for repeatability.
     srand48(SEED);
@@ -71,9 +110,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Start timer
+    MPI_Barrier(MPI_COMM_WORLD); 
     double start_time = MPI_Wtime();
-    
-    //TODO: Broadcast matrix B to all ranks 
+
+    //TODO: Broadcast matrix B to all ranks
+    int err = MPI_Bcast(B, N * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) {
+        fprintf(stderr, "Rank %d: MPI_Bcast failed\n", rank);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
+
 
     // Perform GEMM
     gemm(A, B, C, N, rows_per_rank, rank);
@@ -81,13 +128,35 @@ int main(int argc, char *argv[]) {
     //TODO: Gather result from all ranks into rank 0.
     if (rank == 0) {
         //TODO: Allocate the memory for the final matrix C that will hold the result of the multiplication from all ranks.
-        
+        double *final_C = (double *)malloc(N * N * sizeof(double));
+        if (final_C == NULL) {
+            fprintf(stderr, "Rank 0: Failed to allocate final_C\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return 1;
+        }
+
+        err = MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, final_C, rows_per_rank * N, 0, MPI_COMM_WORLD);
+        if (err != MPI_SUCCESS) {
+            fprintf(stderr, "Rank 0: MPI_Gather failed\n");
+            free(final_C);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return 1;
+        }
+        free(final_C);
     } else {
         //TODO: Send the result of the multiplication from each rank to rank 0. HINT, "Send" DOES NOT mean MPI_Send!
+        MPI_Gather(C, rows_per_rank * N, MPI_DOUBLE, NULL, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        if (err != MPI_SUCCESS) {
+            fprintf(stderr, "Rank %d: MPI_Gather failed\n", rank);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return 1;
+        }
     }
 
     // End timer and print execution time on rank 0
     double end_time = MPI_Wtime();
+    double max_time;
+    MPI_Reduce(&end_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     //TODO: print the execution time.
     // Make sure that rank 0 prints the CORRECT execution time. 
@@ -96,11 +165,11 @@ int main(int argc, char *argv[]) {
         printf("Execution time: %f seconds\n", max_time - start_time);
     }
 
-    
+    // Free memory
     free(A);
     free(B);
     free(C);
-    
+
     MPI_Finalize();
     return 0;
 }
