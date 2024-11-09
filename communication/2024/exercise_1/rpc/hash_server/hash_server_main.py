@@ -9,6 +9,7 @@ class HashService(hash_pb2_grpc.HSServicer):
     def GetHash(self, request, context):
         try:
             # Generate the hash value of the passcode
+            ## TODO: CORRECT THE CODE BELOW
             data_hash = hashlib.sha256(request.passcode.encode()).hexdigest()
             return hash_pb2.Response(hash=data_hash)
 
