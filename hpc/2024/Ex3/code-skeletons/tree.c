@@ -22,7 +22,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include "mpi.h"
+#include <mpi.h>
 
 #define MAX_CONTRIB 200
 
@@ -30,20 +30,28 @@ int global_sum(int my_contrib, int my_rank, int p, MPI_Comm comm);
 
 int main(void) {
     int p, my_rank;
-    MPI_Comm comm;
+    MPI_Comm comm = MPI_COMM_WORLD;
+
+    // INITIALIZE MPI
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(comm, &p);
+    MPI_Comm_rank(comm, &my_rank);
+
     int x;
     int total;
-    
-//INITIALIZE MPI
-    
-    srandom(my_rank+1);
+
+    srandom(my_rank + 1);
     x = random() % MAX_CONTRIB;
     printf("Proc %d > x = %d\n", my_rank, x);
-    
+
     total = global_sum(x, my_rank, p, comm);
-    
-    //PRINT RESULT
-    
+
+    // PRINT RESULT
+    if (my_rank == 0) {
+        printf("Total sum = %d\n", total);
+    }
+
+    MPI_Finalize();
     return 0;
 }  /* main */
 
@@ -89,24 +97,26 @@ int main(void) {
  *           7 111 110  x   x
  */
 int global_sum(int my_contrib, int my_rank, int p, MPI_Comm comm) {
-    int sum = my_contrib;
-    int temp;
-    int partner;
-    int done = 0;
-    unsigned bitmask = (unsigned) 1;
-    
-#   ifdef DEBUG
-    int my_pass = -1;
-    partner = -1;
-    printf("Proc %d > partner = %d, bitmask = %d, pass = %d\n",
-           my_rank, partner, bitmask, my_pass);
-    fflush(stdout);
-#   endif
-    
-    while (/*TODO*/) {
-        //TODO
+    int sum = my_contrib;  // Start with the local contribution
+    int temp;  // Temporary variable for received values
+    unsigned bitmask = 1;  // Initialize bitmask
+
+    while (bitmask < p) {
+        int partner = my_rank ^ bitmask;  // Determine the partner process
+        // Check if the partner is a valid process
+        if (partner < p) {
+            // If the process is a receiver
+            if ((my_rank & bitmask) == 0) {
+                MPI_Recv(&temp, 1, MPI_INT, partner, 0, comm, MPI_STATUS_IGNORE);
+                sum += temp;  // Add the received value to the sum
+            } else {  // If the process is a sender
+                MPI_Send(&sum, 1, MPI_INT, partner, 0, comm);
+                break;  // Sender process exits the loop
+            }
+        }
+        bitmask <<= 1;  // Left shift the bitmask for the next level of the tree
     }
-    
-    /* Valid only on 0 */
+
+    // The final sum is only valid in process 0
     return sum;
-}  /* Global_sum */
+}  /* global_sum */

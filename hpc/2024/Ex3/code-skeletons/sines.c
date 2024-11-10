@@ -5,6 +5,7 @@
 #include <time.h>
 #include <ctype.h>
 
+#define M_PI 3.14159265358979323846
 
 // In this exercise you need to paralelize the function sine //
 
@@ -59,7 +60,9 @@ int main(int argc, char * argv[]) {
 void sine(double *a, int N){
 
 	int i;
-	for(i=0;i<N;i++){
-		a[i]=sin(2.0*M_PI/1000.0*i);
+
+	#pragma omp parallel for
+	for(i = 0; i < N; i++){
+		a[i] = sin(2.0 * M_PI / 1000.0 * i);
 	}
 }
