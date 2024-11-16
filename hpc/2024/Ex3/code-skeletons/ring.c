@@ -26,7 +26,6 @@ void print_results(char title[], int value, int my_rank, int p,
 
 int main(void) {
     int p, my_rank, len;
-    MPI_Comm comm;
     int my_contrib;
     int sum;
     char name[MPI_MAX_PROCESSOR_NAME];
@@ -107,21 +106,13 @@ int global_sum(int my_contrib, int my_rank, int p, MPI_Comm comm) {
     MPI_Status status;
 
     // Pass the sum around the ring p-1 times
-    for (int i = 0; i < p; i++) {
-        if (my_rank == i) {
-            // Send the sum to the next process
-            MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
-            // Receive the updated sum from the previous process
-            MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
-            sum = temp;
-        } else {
-            // Receive the sum from the previous process
-            MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
-            // Add the received value to the sum
-            sum += temp;
-            // Send the updated sum to the next process
-            MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
-        }
+    for (int i = 0; i < p - 1; i++) {
+        // Send the sum to the next process
+        MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
+        // Receive the updated sum from the previous process
+        MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
+        // Update the sum
+        sum += temp;
     }
 
     return sum;
