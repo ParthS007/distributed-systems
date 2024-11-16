@@ -5,8 +5,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#define M_PI 3.14
-
 // In this exercise you need to paralelize the function sine //
 
 
