@@ -1,0 +1,1 @@
+Cumulative sum of numbers from 1 to 2000 is 2001000
