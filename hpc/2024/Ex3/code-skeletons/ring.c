@@ -32,16 +32,15 @@ int main(void) {
     char name[MPI_MAX_PROCESSOR_NAME];
     
     // Initialize MPI environment
-    MPI_Init(NULL, NULL); // Missing in the original code
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); // Get the rank of the current process
-    MPI_Comm_size(MPI_COMM_WORLD, &p); // Get the total number of processes
-    MPI_Get_processor_name(name, &len); // Get the name of the processor
+    MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &p);
+    MPI_Get_processor_name(name, &len);
 
-    // Generate a random integer contribution for each process
+    /* Generate a random int */
     srandom(my_rank);
     my_contrib = random() % MAX_CONTRIB;
 
-    // Print the generated values of each process
     print_results("Process Values", my_contrib, my_rank, p, MPI_COMM_WORLD);
     
     // Compute the global sum using the ring-pass method
@@ -50,7 +49,6 @@ int main(void) {
     // Print the total sum as calculated by each process
     print_results("Process Totals", sum, my_rank, p, MPI_COMM_WORLD);
 
-    // Finalize the MPI environment
     MPI_Finalize();
     return 0;
 }
@@ -128,4 +126,4 @@ int global_sum(int my_contrib, int my_rank, int p, MPI_Comm comm) {
     }
 
     return sum;
-}
+} /* Global_sum */

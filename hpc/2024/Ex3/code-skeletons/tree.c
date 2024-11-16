@@ -117,6 +117,6 @@ int global_sum(int my_contrib, int my_rank, int p, MPI_Comm comm) {
         bitmask <<= 1;  // Left shift the bitmask for the next level of the tree
     }
 
-    // The final sum is only valid in process 0
+    /* Valid only on 0 */
     return sum;
-}  /* global_sum */
+}  /* Global_sum */

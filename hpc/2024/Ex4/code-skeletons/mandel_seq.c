@@ -132,16 +132,16 @@ int main(int argc, char * argv[]) {
   scale_color = (double)(max_color - min_color) / (double)(maxiter - 1);
 
   get_clockres( & t1);
-  get_time( & t1); // Record the starting time
+  get_time( & t1);
 
-  MPI_Init( & argc, & argv); // Initialize MPI environment
-  MPI_Comm_size(MPI_COMM_WORLD, & nprocs); // Get the number of processes
-  MPI_Comm_rank(MPI_COMM_WORLD, & rank); // Get the rank of the current process
+  MPI_Init( & argc, & argv);
+  MPI_Comm_size(MPI_COMM_WORLD, & nprocs);
+  MPI_Comm_rank(MPI_COMM_WORLD, & rank);
 
   // Calculate the number of pixels each process will handle
   int pix_per_procs = ceil(width * width / nprocs);
-  start = rank * pix_per_procs; // Calculate the starting pixel index for the current process
-  end = (rank + 1) * pix_per_procs; // Calculate the ending pixel index for the current process
+  start = rank * pix_per_procs;
+  end = (rank + 1) * pix_per_procs;
 
   // Ensure the last process gets the remaining pixels
   if (rank == nprocs - 1) {
@@ -157,15 +157,13 @@ int main(int argc, char * argv[]) {
   // Allocate memory for the local data array for each process
   local_data_msg = malloc(pix_per_procs * sizeof(long));
 
-  // Calculate pixels for the current process
   calculate_pixel(width, maxiter, local_data_msg, real_min, real_max, imag_min, imag_max, scale_real, scale_imag, scale_color, start, end);
 
   // Gather local pixel data from all processes to the root (rank 0) process
   MPI_Gather(local_data_msg, pix_per_procs, MPI_LONG, data_msg, pix_per_procs, MPI_LONG, 0, MPI_COMM_WORLD);
 
-  get_time( & t2); // Record the ending time
+  get_time( & t2);
 
-  // Calculate the elapsed time
   if ((t2.tv_nsec - t1.tv_nsec) < 0) {
     dt.tv_sec = t2.tv_sec - t1.tv_sec - 1;
     dt.tv_nsec = 1000000000 - t1.tv_nsec + t2.tv_nsec;
@@ -183,9 +181,9 @@ int main(int argc, char * argv[]) {
     free(data_msg);
   }
 
-  free(local_data_msg); // Free memory allocated for local data
+  free(local_data_msg);
 
-  MPI_Finalize(); // Finalize MPI environment
+  MPI_Finalize();
 
   return 0;
 }

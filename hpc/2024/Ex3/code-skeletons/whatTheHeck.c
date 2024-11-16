@@ -47,7 +47,6 @@ main()
       int start = thread_num * (10 / thread_count);
       int end = (thread_num == thread_count - 1) ? 10 : start + (10 / thread_count);
 
-      // each thread computes its local sum
       int local_sum = computeLocalSum(a, start, end);
       // each thread adds its local sum to the global sum in a critical section
       addToGlobalSum(&global_sum, local_sum);

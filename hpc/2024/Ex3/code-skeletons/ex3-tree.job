@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH -J tree      # Job name
+#SBATCH --time=00:05:00       # Maximum running time
+#SBATCH --exclusive           # Exclusive access to nodes
+#SBATCH --nodes=1             # Need 1 node since we only want 2 ranks total
+#SBATCH --ntasks-per-node=2   # 2 MPI ranks total
+#SBATCH --cpus-per-task=10    # 10 OpenMP threads per rank
+#SBATCH --partition=xeon      # Using xeon partition
+#SBATCH --output=tree.txt  # Output file
+#SBATCH --hint=nomultithread  # Disable hardware multithreading
+
+# Load Intel compiler
+module load intel
+
+# Set OpenMP threads
+export OMP_NUM_THREADS=10
+
+# Compile the code
+mpicc -g -Wall tree.c -o tree
+
+# Run the program
+srun ./tree
