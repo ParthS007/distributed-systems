@@ -1,0 +1,1 @@
+Process 1 received broadcast message: Broadcast message from process 0!
