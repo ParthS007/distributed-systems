@@ -106,23 +106,22 @@ int global_sum(int my_contrib, int my_rank, int p, MPI_Comm comm) {
 
     MPI_Status status;
 
-    if (my_rank == 0) {
-        // Process 0 starts the ring-pass by sending its sum and receiving the final sum
-        MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
-        MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
-        sum += temp;
-    } else {
-        // Other processes receive from the previous, add to the sum, and send to the next
-        MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
-        sum += temp;
-        MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
-    }
-
-    // Continue passing the sum around the ring until it completes the loop
-    for (int i = 1; i < p - 1; i++) {
-        MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
-        sum += temp;
-        MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
+    // Pass the sum around the ring p-1 times
+    for (int i = 0; i < p; i++) {
+        if (my_rank == i) {
+            // Send the sum to the next process
+            MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
+            // Receive the updated sum from the previous process
+            MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
+            sum = temp;
+        } else {
+            // Receive the sum from the previous process
+            MPI_Recv(&temp, 1, MPI_INT, source, 0, comm, &status);
+            // Add the received value to the sum
+            sum += temp;
+            // Send the updated sum to the next process
+            MPI_Send(&sum, 1, MPI_INT, dest, 0, comm);
+        }
     }
 
     return sum;
