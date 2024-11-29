@@ -111,6 +111,7 @@ int main(int argc, char *argv[]) {
     // End timer and print execution time on rank 0
     double end_time = MPI_Wtime();
     double max_time;
+    // Interview: Why reduction is used here? - Does it make sense to use MPI_Reduce here?
     MPI_Reduce(&end_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     //TODO: print the execution time.

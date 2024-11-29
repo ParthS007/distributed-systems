@@ -172,6 +172,7 @@ int main(int argc, char * argv[]) {
     dt.tv_nsec = t2.tv_nsec - t1.tv_nsec;
   }
 
+  // Could have used Reduce to get the maximum time from all processes
   double time = 0;
   time += dt.tv_sec + (double)(dt.tv_nsec) * 0.000000001;
 
