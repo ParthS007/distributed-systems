@@ -7,7 +7,10 @@ import ch.unibas.dmi.dbis.fds.p2p.chord.api.data.IdentifierCircle;
 import ch.unibas.dmi.dbis.fds.p2p.chord.api.data.IdentifierCircularInterval;
 import ch.unibas.dmi.dbis.fds.p2p.chord.api.math.CircularInterval;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static ch.unibas.dmi.dbis.fds.p2p.chord.api.data.IdentifierCircularInterval.createOpen;
 
@@ -38,7 +41,10 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   public ChordNode findSuccessor(ChordNode caller, Identifier id) {
     /* TODO: Implementation required. */
-    throw new RuntimeException("This method has not been implemented!");
+    ChordNode nprime;
+    nprime = findPredecessor(this,id);
+    return nprime.successor();
+    //throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -53,7 +59,15 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   public ChordNode findPredecessor(ChordNode caller, Identifier id) {
     /* TODO: Implementation required. */
-    throw new RuntimeException("This method has not been implemented!");
+    ChordNode nprime;
+    nprime = this;
+    CircularInterval<Integer> interval_t = CircularInterval.createLeftOpen(nprime.getIdentifier().getIndex(), nprime.successor().getIdentifier().getIndex());
+    while(!interval_t.contains(id.getIndex())){
+      nprime = nprime.closestPrecedingFinger(this,id);
+      interval_t = CircularInterval.createLeftOpen(nprime.getIdentifier().getIndex(), nprime.successor().getIdentifier().getIndex());
+    }
+    return nprime;
+    // throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -68,7 +82,18 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   public ChordNode closestPrecedingFinger(ChordNode caller, Identifier id) {
     /* TODO: Implementation required. */
-    throw new RuntimeException("This method has not been implemented!");
+
+    for(int i = this.getNetwork().getNbits(); i>=1; i--)
+    {
+      if(!this.fingerTable.node(i).isPresent()) continue;
+      CircularInterval<Integer> interval_t = CircularInterval.createOpen(this.getIdentifier().getIndex(), id.getIndex());
+      if(interval_t.contains(this.fingerTable.node(i).get().getIdentifier().getIndex())){
+        return this.fingerTable.node(i).get();
+      }
+
+    }
+    return this;
+    // throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -87,7 +112,10 @@ public class ChordPeer extends AbstractChordPeer {
     if (nprime != null) {
       initFingerTable(nprime);
       updateOthers();
+      ChordPeer successor = (ChordPeer) this.successor();
+      Map<String, String> items = successor.dump();
       /* TODO: Move keys. */
+      moveKeysBetweenNodes(items,this);
     } else {
       for (int i = 1; i <= getNetwork().getNbits(); i++) {
         this.fingerTable.setNode(i, this);
@@ -96,8 +124,22 @@ public class ChordPeer extends AbstractChordPeer {
     }
   }
 
+
+  public void moveKeysBetweenNodes(Map<String, String> items,ChordNode caller)
+  {
+    CircularInterval<Integer> interval = CircularInterval.createLeftOpen(caller.predecessor().getIdentifier().getIndex(), caller.getIdentifier().getIndex());
+    for (Map.Entry<String, String> item : items.entrySet()) {
+      int item_hash = this.getNetwork().getHashFunction().hash(item.getKey());
+      if (interval.contains(getNetwork().getIdentifierCircle().getIdentifierAt(item_hash).getIndex())) {
+        caller.store(caller, item.getKey(), item.getValue());
+        caller.successor().delete(caller.successor(), item.getKey());
+      }
+    }
+
+  }
+
   /**
-   * Called on this {@link ChordNode} if it wishes to join the {@link ChordNetwork}. {@code nprime} references
+   * Called on this {@link ChordNode} if i  t wishes to join the {@link ChordNetwork}. {@code nprime} references
    * another {@link ChordNode} that is already member of the {@link ChordNetwork}.
    *
    * Required for dynamic {@link ChordNetwork} mode. Since in that mode {@link ChordNode}s stabilize the network
@@ -125,8 +167,24 @@ public class ChordPeer extends AbstractChordPeer {
    * @param nprime Arbitrary {@link ChordNode} that is part of the network.
    */
   private void initFingerTable(ChordNode nprime) {
+    CircularInterval<Integer> interval_t;
+    this.fingerTable.setNode(1, nprime.findSuccessor(this, this.getNetwork().getIdentifierCircle().getIdentifierAt(this.fingerTable.start(1))));
+    this.setPredecessor(this.successor().predecessor());
+    this.successor().setPredecessor(this);
+    for(int i = 1; i < getNetwork().getNbits(); i++ )
+    {
+      interval_t = CircularInterval.createClosed(this.getIdentifier().getIndex(), this.fingerTable.node(i).get().getIdentifier().getIndex());
+      if(interval_t.contains(this.fingerTable.start(i+1))){
+        this.fingerTable.setNode(i+1, this.fingerTable.node(i).get());
+
+      }
+      else{
+        this.fingerTable.setNode(i+1, this.successor().findSuccessor(this, this.getNetwork().getIdentifierCircle().getIdentifierAt(this.fingerTable.start(i+1))));
+      }
+
+    }
     /* TODO: Implementation required. */
-    throw new RuntimeException("This method has not been implemented!");
+    //throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -135,8 +193,15 @@ public class ChordPeer extends AbstractChordPeer {
    * Defined in [1], Figure 6
    */
   private void updateOthers() {
+    ChordNode p;
+    for(int i=1; i<= getNetwork().getNbits(); i++)
+    {
+      double d = this.getIdentifier().getIndex();
+      p = this.findPredecessor(this, this.getNetwork().getIdentifierCircle().getIdentifierAt((int)(d + 1 - Math.pow(2,i-1) )));
+      p.updateFingerTable(this, i);
+    }
     /* TODO: Implementation required. */
-    throw new RuntimeException("This method has not been implemented!");
+    // throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -150,8 +215,16 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   public void updateFingerTable(ChordNode s, int i) {
     finger().node(i).ifPresent(node -> {
-      /* TODO: Implementation required. */
-      throw new RuntimeException("This method has not been implemented!");
+      ChordNode p;
+      CircularInterval<Integer> interval_t;
+      interval_t = CircularInterval.createLeftOpen(this.getIdentifier().getIndex(), this.fingerTable.node(i).get().getIdentifier().getIndex());
+      if(interval_t.contains(s.getIdentifier().getIndex())){
+        this.fingerTable.setNode(i,s);
+        p = predecessor();
+        p.updateFingerTable(s,i);
+      }
+//      /* TODO: Implementation required. */
+//    //  throw new RuntimeException("This method has not been implemented!");
     });
   }
 
@@ -166,9 +239,12 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   public void notify(ChordNode nprime) {
     if (this.status() == NodeStatus.OFFLINE || this.status() == NodeStatus.JOINING) return;
-
+    CircularInterval<Integer> interval = CircularInterval.createOpen(this.predecessor().getIdentifier().getIndex(), this.getIdentifier().getIndex());
+    if (interval.contains(nprime.getIdentifier().getIndex()) || this.predecessor() == null) {
+      this.setPredecessor(nprime);
+    }
     /* TODO: Implementation required. Hint: Null check on predecessor! */
-    throw new RuntimeException("This method has not been implemented!");
+//    throw new RuntimeException("This method has not been implemented!");
 
   }
 
@@ -180,9 +256,12 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   public void fixFingers() {
     if (this.status() == NodeStatus.OFFLINE || this.status() == NodeStatus.JOINING) return;
+    Random ran_int = new Random();
+    int ran = ran_int.nextInt(getNetwork().getNbits()) + 1;
+    this.fingerTable.setNode(ran, findSuccessor(this, this.getNetwork().getIdentifierCircle().getIdentifierAt(this.fingerTable.start(ran))));
 
     /* TODO: Implementation required */
-    throw new RuntimeException("This method has not been implemented!");
+//    throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -193,10 +272,16 @@ public class ChordPeer extends AbstractChordPeer {
    */
   @Override
   public void stabilize() {
-    if (this.status() == NodeStatus.OFFLINE || this.status() == NodeStatus.JOINING) return;
-
+    if (this.status() == NodeStatus.OFFLINE || this.status() == NodeStatus.JOINING || this.successor().predecessor() == null)return;
+    ChordNode x;
+    x = this.successor().predecessor();
+    CircularInterval<Identifier> interval_t = CircularInterval.createOpen(this.getIdentifier(), this.successor().getIdentifier());
+    if (interval_t.contains(x.getIdentifier())) {
+      this.fingerTable.setNode(1,x);
+    }
+    this.successor().notify(this);
     /* TODO: Implementation required.*/
-    throw new RuntimeException("This method has not been implemented!");
+//    throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -208,8 +293,11 @@ public class ChordPeer extends AbstractChordPeer {
   public void checkPredecessor() {
     if (this.status() == NodeStatus.OFFLINE || this.status() == NodeStatus.JOINING) return;
 
+    if (this.predecessor() == null || this.predecessor().status() == NodeStatus.OFFLINE){
+      this.setPredecessor(this.findPredecessor(this, this.getIdentifier()));
+    }
     /* TODO: Implementation required. Hint: Null check on predecessor! */
-    throw new RuntimeException("This method has not been implemented!");
+//    throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -220,8 +308,11 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   public void checkSuccessor() {
     if (this.status() == NodeStatus.OFFLINE || this.status() == NodeStatus.JOINING) return;
+    if (this.successor() == null || this.successor().status() == NodeStatus.OFFLINE){
+      this.fingerTable.setNode(1, this.findSuccessor(this, this.getIdentifier()));
+    }
     /* TODO: Implementation required. Hint: Null check on predecessor! */
-    throw new RuntimeException("This method has not been implemented!");
+//    throw new RuntimeException("This method has not been implemented!");
   }
 
   /**
@@ -232,7 +323,10 @@ public class ChordPeer extends AbstractChordPeer {
   @Override
   protected ChordNode lookupNodeForItem(String key) {
     /* TODO: Implementation required. Hint: Null check on predecessor! */
-    throw new RuntimeException("This method has not been implemented!");
+    ChordNode lookup_node;
+    lookup_node = findSuccessor(this, this.getNetwork().getIdentifierCircle().getIdentifierAt(getNetwork().getHashFunction().hash(key)));
+    return lookup_node;
+//    throw new RuntimeException("This method has not been implemented!");
   }
 
   @Override
